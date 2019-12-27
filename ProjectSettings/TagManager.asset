@@ -22,7 +22,7 @@ TagManager:
   - 
   - ForeGroundLayer
   - 
-  - 
+  - TouchInputLayer
   - 
   - Player
   - 
@@ -49,4 +49,7 @@ TagManager:
     locked: 0
   - name: Platforms
     uniqueID: 252614625
+    locked: 0
+  - name: UI
+    uniqueID: 4057768393
     locked: 0
