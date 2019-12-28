@@ -13,7 +13,7 @@ public class PlayerControl : MonoBehaviour
     public float charge = 100.0f;
 
     [Range(0, .3f)] [SerializeField] private float movementSmoothing = .1f;   // How much to smooth out the movement
-    [SerializeField] private float jumpForce = 2000f;                           // Amount of force added when the player jumps.
+    [SerializeField] private float jumpForce = 1000f;                           // Amount of force added when the player jumps.
 
     //[SerializeField] private Transform groundCheck;                           // A position marking where to check if the player is grounded.
     [SerializeField] private BoxCollider2D groundCollider;
@@ -28,6 +28,9 @@ public class PlayerControl : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
 
     private float horizontalMovement = 0f;
+    private float gravityDrag = 4f;
+
+    private ContactFilter2D filter;
 
     private bool isGrounded = true;
     private bool isJumping = false;
@@ -44,30 +47,21 @@ public class PlayerControl : MonoBehaviour
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
+        filter = new ContactFilter2D();
+        filter.SetLayerMask(groundLayer);
+        //Physics2D.gravity = new Vector2(0, -20.8f);
+        Flip();
     }
 
     private void FixedUpdate()
     {
         bool wasGrounded = isGrounded;
-        isGrounded = false;
+        isGrounded = IsPlayerGrounded();
         slider.value = charge;
         
-        RaycastHit2D raycastHit = Physics2D.Raycast(groundCollider.bounds.center, Vector2.down, groundCollider.bounds.extents.y + 0.01f, groundLayer);
-        Color rayColor;
-        if (raycastHit.collider != null)
-        {
-            rayColor = Color.green;
-            isGrounded = true;
-        }
-        else
-        {
-            rayColor = Color.red;
-        }
-        Debug.DrawRay(groundCollider.bounds.center, Vector2.down * (groundCollider.bounds.extents.y + 0.01f));
-        
-
         if (isGrounded)
         {
+            gravityDrag = 4f;
             if (!wasGrounded)
             {
                 isFalling = false;
@@ -114,10 +108,15 @@ public class PlayerControl : MonoBehaviour
             targetVelocity = new Vector2(direction.x * 0f, direction.y);
             rigidBody.velocity = Vector3.SmoothDamp(rigidBody.velocity, targetVelocity, ref velocity, movementSmoothing);
             animator.SetBool("IsCrouching", true);
+            animator.SetBool("IsFalling", false);
+            animator.SetBool("IsJumping", false);
+            isJumping = false;
+            isGrounded = true;
+            isFalling = false;
         }
         else if (isJumping)
         {
-            float value = jumpForce * (charge / 100);
+            float value = jumpForce * (charge / 180) + 80;
             rigidBody.AddForce(new Vector2(direction.x * value * speed, value));
             charge = 100;
             isJumping = false;
@@ -130,15 +129,14 @@ public class PlayerControl : MonoBehaviour
         else
         {
             float xmultiplier = 5f;
-            float yAddition = 0f;
             if (isFalling)
             {
                 animator.SetBool("IsFalling", true);
-                yAddition = 12f;
-                xmultiplier *= 2f;
+                if (gravityDrag < 16f) gravityDrag += 0.2f;
+                xmultiplier *= 2.5f;
             }
 
-            targetVelocity = new Vector2(direction.x * xmultiplier * speed, direction.y -= yAddition);
+            targetVelocity = new Vector2(direction.x * xmultiplier * speed, direction.y -= gravityDrag);
             rigidBody.velocity = Vector3.SmoothDamp(rigidBody.velocity, targetVelocity, ref velocity, movementSmoothing);
             animator.SetFloat("Speed", Mathf.Abs(direction.x));
             animator.SetBool("IsCrouching", false);
@@ -156,6 +154,20 @@ public class PlayerControl : MonoBehaviour
         if (Input.GetButtonDown("Jump")) Charge();
         if (Input.GetButtonUp("Jump")) Jump();
 
+    }
+
+    public bool IsPlayerGrounded()
+    {
+        RaycastHit2D[] hits = new RaycastHit2D[10];
+
+        int numberOfHits = groundCollider.Cast(Vector2.down, filter, hits, 0.1f);
+
+        for (int i = 0; i < numberOfHits; i++)
+        {
+            if (!hits[i].collider.isTrigger) return true;
+        }
+
+        return false;
     }
 
     public void Charge()
