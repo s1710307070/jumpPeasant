@@ -12,16 +12,13 @@ public class PlayerControl : MonoBehaviour
     public float speed = 1.2f;
     public float charge = 100.0f;
 
-    [Range(0, .3f)] [SerializeField] private float movementSmoothing = .1f;   // How much to smooth out the movement
-    [SerializeField] private float jumpForce = 1000f;                           // Amount of force added when the player jumps.
+    [Range(0, .3f)] [SerializeField] private float movementSmoothing = .1f;
+    [SerializeField] private float jumpForce = 1000f;
 
-    //[SerializeField] private Transform groundCheck;                           // A position marking where to check if the player is grounded.
     [SerializeField] private BoxCollider2D groundCollider;
-    //[SerializeField] private Transform ceilingCheck;                            // A position marking where to check for ceilings
-    [SerializeField] private LayerMask groundLayer;                            // A mask determining what is ground to the character
+    [SerializeField] private LayerMask groundLayer;
 
-    const float groundedRadius = .2f; // Radius of the overlap circle to determine if grounded
-    //const float ceilingRadius = .2f; // Radius of the overlap circle to determine if the player can stand up
+    const float groundedRadius = .2f;
 
     private Vector2 lastPosition;
 
@@ -49,7 +46,6 @@ public class PlayerControl : MonoBehaviour
         rigidBody = GetComponent<Rigidbody2D>();
         filter = new ContactFilter2D();
         filter.SetLayerMask(groundLayer);
-        //Physics2D.gravity = new Vector2(0, -20.8f);
         Flip();
     }
 
@@ -187,10 +183,8 @@ public class PlayerControl : MonoBehaviour
 
     private void Flip()
     {
-        // Switch the way the player is labelled as facing.
         facingRight = !facingRight;
 
-        // Multiply the player's x local scale by -1.
         Vector3 theScale = transform.localScale;
         theScale.x *= -1;
         transform.localScale = theScale;
